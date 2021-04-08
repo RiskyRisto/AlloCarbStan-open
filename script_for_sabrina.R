@@ -19,7 +19,7 @@ Y_df <- read_xlsx("Sabrina_mixing_model_data.xlsx", sheet = "Consumers") %>%
 Hab_df <- read_xlsx("Sabrina_mixing_model_data.xlsx", sheet = "Habitats")
 # Scaled (mean = 0, sd = 1) features of habitats, aka explonaroty variables in model
 E_df <- Hab_df %>% 
-    select(-`River name`, -Hwat) %>% # Drop out variables that are not explonatory variables
+    select(-`River name`, -Hwat) %>% # Drop out variables that are not covariates in the model
     mutate(across(-matches("Hab_id"), function(x) scale(x)[,1])) # standardization
 
 # Hydrogen tracer values in water in each habitat
@@ -180,10 +180,10 @@ nchains <- 4
 # Start iterating model
 start_time <- Sys.time()
 stanobj <- stan(file = "stan_model_single_level_2021.stan", data = dat_stan,
-                iter = 3000, thin=1, chains = nchains, cores = nchains, warmup = 1000,
+                iter = 4500, thin=1, chains = nchains, cores = nchains, warmup = 2000,
                 verbose=FALSE)
-end_time <- Sys.time() # 44 min with 4000/1000 iterations
-end_time - start_time
+end_time <- Sys.time() 
+end_time - start_time # 8 min with 4500/2000 * 4 chains iterations (year 2020 macbook pro) 
 
 # 7. Analysis of Stan results----
 
@@ -197,7 +197,7 @@ rstan::traceplot(stanobj, pars = "beta", inc_warmup = FALSE)
 pars <- c("sigma_X", "sigma_mu", "mu_X_mu")
 pars <- c("Omega_X")
 # 1st level consuming
-pars <- c("Phi_X", "beta", "sigma_U_X", "xi_X")
+pars <- c("Phi_X", "beta", "xi_X")
 # Proportions for each habitat
 pars <- "p_X_h"
 
@@ -205,7 +205,7 @@ pars <- "p_X_h"
 print(stanobj, pars = pars, digits_summary = 3)
 
 # 3. Plot posterior distributions
-mcmc_areas(rstan::extract(stanobj, pars = pars, permuted = FALSE), prob = 0.95) + 
+mcmc_areas(rstan::extract(stanobj, pars = "Phi_X", permuted = FALSE), prob = 0.95) + 
     ggtitle("Posterior distribution","with medians and 95% intervals") 
 
 # 4. Check out Correlations between parameters
