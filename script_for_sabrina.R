@@ -73,6 +73,7 @@ X_tracer_id <- factor(
 
 
 #### Fixed parameters ###
+tau <- array(c(1,1), dim=c(length(taxa_names),K))
 
 (mu_lambda = matrix(c(0.99,0,3.37), ncol = J, byrow= T))
 (sigma2_lambda = matrix(c(0.69^2,0,0.54^2), ncol = J, byrow= T)) 
@@ -141,6 +142,7 @@ s_mu <- matrix(c( 5, 3, # tracer 1, C
 a_omega <- 16
 b_omega<- 48 #mean = 0.25, sd = 0.054, with (4,12): mean = 0.25, sd = 0.1
 
+
 # 6. Stan modelling ####
 
 dat_stan <- list(J = J, K = K, H = H, # Common settings
@@ -158,7 +160,7 @@ dat_stan <- list(J = J, K = K, H = H, # Common settings
                  N_E_obs = nrow(E_obs), #Nz_mis = nrow(E_mis), 
                  E_obs = E_obs[,1], E_obs_id = E_obs[,2:3], #Z_mis_id = E_mis[,2:3],
                  # other information
-                 ee = e, max_tau = 1, tau = array(c(1,1,1), dim=c(length(taxa_names),K)),
+                 ee = e, max_tau = max(tau), tau = tau,
                  mu_lambda = mu_lambda, sigma2_lambda = sigma2_lambda,
                  # Hyperparameters for informative priors
                  a_sigma_X = a_sigma_X, b_sigma_X = b_sigma_X,
