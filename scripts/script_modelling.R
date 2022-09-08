@@ -1,13 +1,15 @@
-### 1. Load needed packages ####
+#1. Load needed packages ----
 
 require(tidyverse)
 require(rstan)
 require(bayesplot)
+#Stan options
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
+#Read xlsx files
 require(readxl)
 
-### 1. Prepare relevant data ####
+# 2. Prepare relevant data ----
 data_file <- "data/sim_data_1.xlsx"
 
 # Source data
@@ -24,7 +26,7 @@ H_wat_df <- read_xlsx(data_file, sheet = "H_wat") %>%
     arrange(Hab_id)
 
 
-# Settings
+# 3. Settings ----
 
 # Names and order of the taxa (1st level consumers first and so on..)
 taxa_names <- c("Cladocera", "Copepods", "Perch")
@@ -37,6 +39,21 @@ n_tracers <- length(tracer_names)
 # Number of habitats
 H <- length(unique(X_df$Hab_id))
 
+# Number of tracers and sources used in the modelling consumption
+
+K <- n_sources
+J <- n_tracers
+
+#Base matrix for ILR transformation
+e <- matrix(rep(0,K*(K-1)), nrow=K, ncol=(K-1))
+for(i in 1:(K-1)){
+    e[,i] <- exp(c(rep(sqrt(1/(i*(i+1))),i),-sqrt(i/(i+1)),rep(0,K-i-1)))
+    e[,i] <- e[,i]/sum(e[,i])
+}
+e
+
+# 4. Data manipulations ----
+
 # Expert estimates for lambda-parameters
 mu_lambda_mtx <- read_xlsx(data_file, sheet = "mu_lambda") %>% 
     arrange(TL) %>% 
@@ -48,7 +65,6 @@ sigma2_lambda_mtx <- read_xlsx(data_file, sheet = "sigma2_lambda") %>%
     select(one_of(tracer_names)) %>% 
     as.matrix()
 
-
 # Combine consumer data
 
 YZ_df <- Y_df %>% 
@@ -59,29 +75,6 @@ YZ_df <- Y_df %>%
 YZ_tracers_mtx <- YZ_df %>% 
     select(one_of(tracer_names)) %>% as.matrix()
 
-
-
-# Joining Hwat values with Y data
-# Y_df <- Y_df %>% 
-#     left_join(
-#         H_wat_df %>% select(Hab_id, Hwat)
-#     )
-
-
-
-# Number of tracers and sources used in the modelling consumption
-
-K <- n_sources
-J <- n_tracers
-
-
-#Base matrix for ILR transformation
-e <- matrix(rep(0,K*(K-1)), nrow=K, ncol=(K-1))
-for(i in 1:(K-1)){
-    e[,i] <- exp(c(rep(sqrt(1/(i*(i+1))),i),-sqrt(i/(i+1)),rep(0,K-i-1)))
-    e[,i] <- e[,i]/sum(e[,i])
-}
-e
 
 #Select covariates used in the modelling
 cov_select <- c(1, 2, 3, 4)
@@ -112,7 +105,7 @@ n_taxa <- c(length(unique(Y_df$Taxon_ID)),
                      1,1,3)# Copepods
                     , nrow = n_taxa[1], ncol = K, byrow = T))
 
-# 5.Set informative priors ----
+# 5. Set informative priors ----
 
 # Whitin lake variation
 a_sigma_X <- matrix(c(3.5,2.5, 2, # tracer 1, C
@@ -148,14 +141,18 @@ s_mu <- matrix(c(5, 5, 3, # tracer 1, C
                  4, 4, 4), # tracer 3 N 
                ncol = K, byrow = T)
 
+# Informative priors for omega
+
 omega_alpha <- 16
 omega_beta <- 48 #mean = 0.25, sd = 0.054, with (4,12): mean = 0.25, sd = 0.1
 
 # Parameters for PHI Dirilecht prior
 prior_dir_PHI_Y = c(60,35)
 
-### 4. Model for Multiple consumers and covariates with two trophic level ####
+# 6. Stan modelling ----
 
+# Create data fror Stan
+# Set also weakly/un- informative priors
 dat_stan <- list(nX = nrow(X_df), 
                  n_sources = n_sources, n_tracers = n_tracers, H = H, 
                  X_meas = X_df %>% select(one_of(source_names)) %>% as.matrix(), 
@@ -195,8 +192,8 @@ dat_stan
 
 # Start iterating model
 nchains <- 4
-N_iter <- 2000
-N_wu <- 1000
+N_iter <- 2000 # total number of iterations
+N_wu <- 1000 # warm up iterations
 start_time <- Sys.time()
 code <- stanc(file = "stan_models/2TL-mixSIAR.stan", model_name = "model_mt")
 mod <- stan_model(stanc_ret = code)
@@ -208,10 +205,10 @@ end_time <- Sys.time()
 print(end_time - start_time) 
 
 
-### 6. Analysis of Stan results  ####
+# 7. Analysis of Stan results  ----
 
 # Visual convergence
-rstan::traceplot(stanobj, pars = "mu_X_glob", inc_warmup = FALSE)
+rstan::traceplot(stanobj, pars = "PHI_TOT", inc_warmup = FALSE)
 
 ## Posterior estimates ##
 # Source parameters
@@ -231,7 +228,7 @@ pars <- "PHI_TOT"
 pars <- "sigma_Uy"
 
 
-# Print results
+# Print posterior estimates
 print(stanobj, pars = pars, digits_summary = 3)
 
 simulateData <- TRUE
