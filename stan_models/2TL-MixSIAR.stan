@@ -62,10 +62,10 @@ functions {
 data{
     int<lower=0> nX; // Number of source measurement
     int<lower=0> n_sources; // Number of different sources measured
-    int<lower=0> n_tracers; // Number of different isotope tracers measured
+    int<lower=0> n_tracers; // Number of different isotope tracers measured.
     int<lower=0> H; //Number of habitats
     vector[n_sources] X_meas[nX]; // Vector of source isotope measurements from each source
-    int<lower = 1> X_tracer[nX]; // Tracer id of each source measurement
+    int<lower = 1> X_tracer[nX]; // Tracer id of each source measurement. Tracer 2 is Hydrogen 
     int<lower = 1> X_hab[nX]; // Habitat id of each source measurement
     int<lower=0> n_tl; // Number of trophic levels
     int<lower=0> nY[n_tl]; // Number of consumer measurements on each measured trophic levels

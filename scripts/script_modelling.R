@@ -34,6 +34,7 @@ taxa_names <- c("Cladocera", "Copepods", "Perch")
 source_names <- c("Pel", "Ben", "Ter")
 n_sources <- length(source_names)
 # Names (and order) of measured isotope tracers. The most relevant is suggested to be the first and least relevant the last.
+# "2TL-mixSIAR.stan" model assumes that tracer 2 is Hydrogen
 tracer_names <- c("C", "H", "N")
 n_tracers <- length(tracer_names)
 # Number of habitats
@@ -90,8 +91,8 @@ E_model_matrix  <- read_xlsx(data_file, sheet = "E_long") %>%
 #    as.matrix()
 
 # This prepares for imputing missing values if there are those
-(E_obs <- E_model_matrix[!is.na(E_model_matrix[,1]),])
-(E_mis <- E_model_matrix[is.na(E_model_matrix[,1]),])
+(E_obs <- E_model_matrix[!is.na(E_model_matrix[,1]),] %>% matrix(ncol = 3))
+(E_mis <- E_model_matrix[is.na(E_model_matrix[,1]),] %>% matrix(ncol = 3))
 
 # Number of taxons on each level.
 # For example c(2,1) applies that thre are 2 taxons at the first measured trophic level and 1 taxon at the second measured trophic level
@@ -151,8 +152,9 @@ prior_dir_PHI_Y = c(60,35)
 
 # 6. Stan modelling ----
 
-# Create data fror Stan
+# Create data for Stan
 # Set also weakly/un- informative priors
+# "2TL-mixSIAR.stan" model assumes that tracer 2 is Hydrogen
 dat_stan <- list(nX = nrow(X_df), 
                  n_sources = n_sources, n_tracers = n_tracers, H = H, 
                  X_meas = X_df %>% select(one_of(source_names)) %>% as.matrix(), 
