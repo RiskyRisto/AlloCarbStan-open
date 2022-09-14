@@ -91,6 +91,7 @@ E_model_matrix  <- read_xlsx(data_file, sheet = "E_long") %>%
 #    as.matrix()
 
 # This prepares for imputing missing values if there are those
+# Has to be in matrix format
 (E_obs <- E_model_matrix[!is.na(E_model_matrix[,1]),] %>% matrix(ncol = 3))
 (E_mis <- E_model_matrix[is.na(E_model_matrix[,1]),] %>% matrix(ncol = 3))
 
@@ -193,14 +194,17 @@ dat_stan
 
 
 # Start iterating model
-nchains <- 4
+nchains <- 4 # number of chains
 N_iter <- 2000 # total number of iterations
 N_wu <- 1000 # warm up iterations
 start_time <- Sys.time()
 code <- stanc(file = "stan_models/2TL-mixSIAR.stan", model_name = "model_mt")
 mod <- stan_model(stanc_ret = code)
 stanobj <- sampling(mod, data = dat_stan,
-                    iter = N_iter, thin=1, chains = nchains, cores = nchains, warmup = N_wu,
+                    iter = N_iter, thin=1, 
+                    chains = nchains, 
+                    cores = nchains, 
+                    warmup = N_wu,
                     verbose=FALSE)
 
 end_time <- Sys.time() 
