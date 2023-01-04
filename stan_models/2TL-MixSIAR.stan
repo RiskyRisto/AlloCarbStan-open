@@ -266,7 +266,7 @@ for(src in 1:n_sources){
 // Weakly/un- informative priors    
     // LKJ prior on the measurement correlation matrix
    // Comparisons of LKJ distributions: https://www.psychstatistics.com/2014/12/27/d-lkj-priors/
-   for(src in 1:n_sources) OMEGA_X[src] ~ lkj_corr(OMEGA_X_eta); 
+   for(iso in 1:n_tracers) OMEGA_X[iso] ~ lkj_corr(OMEGA_X_eta); 
     for(s in 1:n_taxa[1]) PHI_X[s] ~ dirichlet(alphaX);
     for(s2 in 1:n_taxa[2]) PHI_Y[s2] ~ dirichlet(alphaY);
     // K-1 regression parameters for each continuous explanatory variables

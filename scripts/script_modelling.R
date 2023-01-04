@@ -36,6 +36,8 @@ n_sources <- length(source_names)
 # Names (and order) of measured isotope tracers. The most relevant is suggested to be the first and least relevant the last.
 # "2TL-mixSIAR.stan" model assumes that tracer 2 is Hydrogen
 tracer_names <- c("C", "H", "N")
+#tracer_names <- c("C", "H") # If only C and H measured
+X_df <- X_df %>% filter(Tracer %in% tracer_names)
 n_tracers <- length(tracer_names)
 # Number of habitats
 H <- length(unique(X_df$Hab_id))
@@ -43,7 +45,8 @@ H <- length(unique(X_df$Hab_id))
 # Number of tracers and sources used in the modelling consumption
 
 K <- n_sources
-J <- n_tracers
+J <- n_tracers 
+# J < n_tracers if # measured tracers in X_df < # measured tracers in Y_df
 
 #Base matrix for ILR transformation
 e <- matrix(rep(0,K*(K-1)), nrow=K, ncol=(K-1))
@@ -180,9 +183,12 @@ dat_stan <- list(nX = nrow(X_df),
                  #PARAMETERS based on expert knowledge
                  mu_lambda = mu_lambda_mtx[,1:J], sigma2_lambda = sigma2_lambda_mtx[,1:J],
                  #Hyperparameters for priors
-                 a_sigma_X = a_sigma_X, b_sigma_X = b_sigma_X,
-                 a_sigma_mu = a_sigma_mu, b_sigma_mu = b_sigma_mu,
-                 m_mu = m_mu, s_mu = s_mu,
+                 a_sigma_X = a_sigma_X[1:n_tracers,], 
+                 b_sigma_X = b_sigma_X[1:n_tracers,],
+                 a_sigma_mu = a_sigma_mu[1:n_tracers,],
+                 b_sigma_mu = b_sigma_mu[1:n_tracers,],
+                 m_mu = m_mu[1:n_tracers,],
+                 s_mu = s_mu[1:n_tracers,],
                  omega_alpha = omega_alpha, omega_beta = omega_beta, #with (16,48) mean = 0.25, sd = 0.054,
                  alphaX = c(1,1,1), alphaY = prior_dir_PHI_Y,
                  OMEGA_X_eta = 1, beta_var = 10, U_cauchy_sigma = 3, 
